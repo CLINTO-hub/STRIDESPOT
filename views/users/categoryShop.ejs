@@ -48,7 +48,7 @@
   padding: 4px 8px;
   background-color: #000;
   color: #fff;
-  border-radius: 4px;
+  border-radius: 4px; 
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
@@ -75,9 +75,9 @@
 				<div class="col-first">
 					<h1>Shop Category page</h1>
 					<nav class="d-flex align-items-center">
-						<a href="index.html">Home<span class="lnr lnr-arrow-right"></span></a>
+						<!-- <a href="index.html">Home<span class="lnr lnr-arrow-right"></span></a>
 						<a href="#">Shop<span class="lnr lnr-arrow-right"></span></a>
-						<a href="category.html">Amazefit</a>
+						<a href="category.html">Amazefit</a> -->
 					</nav>
 				</div>
 			</div>
@@ -88,14 +88,29 @@
 		<div class="row">
 			<div class="col-xl-3 col-lg-4 col-md-5">
 				<div class="sidebar-categories">
+					<div class="head">All Products</div>
+					<ul class="main-categories">
+							<li class="main-nav-list"><a class="nav-link" href="/shop"><span class="lnr lnr-arrow-right"></span>All Products</a></li>
+						</li>
+						</ul>
 					<div class="head">Browse Categories</div>
 					<ul class="main-categories">
-						<% category.forEach(function(item) { %>
-							<li class="main-nav-list"><a class="nav-link" href="/categoryShop?id=<%= item._id %>"><span class="lnr lnr-arrow-right"></span><%= item.name %></a></li>
+						 
+							<li class="main-nav-list"><a class="nav-link" href=""><span class="lnr lnr-arrow-right"></span><%= product[0].category.name %></a></li>
 						</li>
-						<% }) %>								
+						 								
 					</ul>
+					<div class="head">Price Sort</div>
+					<ul class="main-categories">
+
+							<li class="main-nav-list"><a class="nav-link" href="/categoryShop?sort=price_asc&&id=<%= product[0].category._id %>  "><span class="lnr lnr-arrow-right"></span>Low --> high</a></li>
+							<li class="main-nav-list"><a class="nav-link" href="/categoryShop?sort=price_desc&&id=<%= product[0].category._id %>  "><span class="lnr lnr-arrow-right"></span>HIgh --> Low</a></li>
+						</li>
+					</ul>
+					
 				</div>
+
+				
 				
 			</div>
 			<div class="col-xl-9 col-lg-8 col-md-7">

@@ -4,6 +4,122 @@ const User = require('../models/userModel');
 const Product = require('../models/productModel')
 
 
+const getOnlineCount =  () => {
+  return new Promise(async (resolve, reject) => {
+    const response = await Order.aggregate([
+      {
+        $unwind: "$orders",
+      },
+      {
+        $match: {
+          "orders.paymentMethod": "razorpay",
+          "orders.orderStatus": "Delivered" 
+
+        },
+      },
+      {
+        $group:{
+          _id: null,
+        totalPriceSum: { $sum: { $toInt: "$orders.totalPrice" } },
+        count: { $sum: 1 }
+
+        }
+
+      }
+
+    ]);
+    resolve(response);
+  });
+}
+const getWalletCount =  () => {
+  return new Promise(async (resolve, reject) => {
+    const response = await Order.aggregate([
+      {
+        $unwind: "$orders",
+      },
+      {
+        $match: {
+          "orders.paymentMethod": "wallet",
+          "orders.orderStatus": "Delivered" 
+
+        },
+      },
+      {
+        $group:{
+          _id: null,
+        totalPriceSum: { $sum: { $toInt: "$orders.totalPrice" } },
+        count: { $sum: 1 }
+
+        }
+
+      }
+
+    ]);
+    resolve(response);
+  });
+}
+
+const getCodCount =  () => {
+  return new Promise(async (resolve, reject) => {
+    const response = await Order.aggregate([
+      {
+        $unwind: "$orders",
+      },
+      {
+        $match: {
+          "orders.paymentMethod": "cod",
+          "orders.orderStatus": "Delivered" 
+
+        },
+      },
+      {
+        $group:{
+          _id: null,
+        totalPriceSum: { $sum: { $toInt: "$orders.totalPrice" } },
+        count: { $sum: 1 }
+
+        }
+
+      }
+
+    ]);
+    resolve(response);
+  });
+}
+
+const RazorpayandWalletCount =  () => {
+  return new Promise(async (resolve, reject) => {
+    const response = await Order.aggregate([
+      {
+        $unwind: "$orders",
+      },
+      {
+        $match: {
+          "orders.paymentMethod": "razorpayandwallet",
+          "orders.orderStatus": "Delivered" 
+
+        },
+      },
+      {
+        $group:{
+          _id: null,
+        totalPriceSum: { $sum: { $toInt: "$orders.totalPrice" } },
+        count: { $sum: 1 }
+
+        }
+
+      }
+
+    ]);
+    resolve(response);
+  });
+}
+
+
+
+
+
+
 const findOrder  = (orderId) => {
     try {
       return new Promise((resolve, reject) => {
@@ -170,7 +286,7 @@ const findOrder  = (orderId) => {
             });
 
           }
-        }else if(order.paymentMethod=='wallet'||order.paymentMethod=='razorpay'){
+        }else if(order.paymentMethod=='wallet'||order.paymentMethod=='razorpay'||order.paymentMethod=='razorpayandwallet'){
           if(status == 'Return Accepted'){
             Order.updateOne(
               { "orders._id": new ObjectId(orderId) },
@@ -221,9 +337,70 @@ const findOrder  = (orderId) => {
     }
   };  
 
+
+  const getSalesReport =  () => {
+    try {
+      return new Promise((resolve, reject) => {
+        Order.aggregate([
+          {
+            $unwind: "$orders",
+          },
+          {
+            $match: {
+              "orders.orderStatus": "Delivered",
+            },
+          },
+        ]).then((response) => {
+          resolve(response);
+        });
+      });
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  const postReport = (date) => {
+    try {
+      const start = new Date(date.startdate);
+      const end = new Date(date.enddate);
+      return new Promise((resolve, reject) => {
+        Order.aggregate([
+          {
+            $unwind: "$orders",
+          },
+          {
+            $match: {
+              $and: [
+                { "orders.orderStatus": "Delivered" },
+                {
+                  "orders.createdAt": {
+                    $gte: start,
+                    $lte: new Date(end.getTime() + 86400000),
+                  },
+                },
+              ],
+            },
+          },
+        ])
+          .exec()
+          .then((response) => {
+            resolve(response);
+          });
+      });
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
   module.exports={
+    getCodCount,
+    getOnlineCount,
+    getWalletCount,
     findOrder,
     cancelOrder,
     changeOrderStatus,
-    returnOrder
+    getSalesReport,
+    postReport,
+    returnOrder,
+    RazorpayandWalletCount
   }

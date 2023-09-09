@@ -15,7 +15,7 @@
     <!-- meta character set -->
     <meta charset="UTF-8">
     <!-- Site Title -->
-    <title>Karma Shop</title>
+    <title>Stride Sport</title>
 
     <!--
             CSS
@@ -51,7 +51,7 @@
 
 
     <!--================Checkout Area =================-->
-    <section class="checkout_area section_gap" style="margin-top: 80px;">
+    <section class="checkout_area section_gap" style="margin-top: 100px;">
         <div class="container">
         
            
@@ -66,7 +66,7 @@
                                 </span>
                             </div>
                             <div class="col-md-6 form-group p_star">
-                                <input type="text" class="form-control" id="number" name="number" value="<%=address[0].mobileNumber%>">
+                                <input type="text" class="form-control" id="nueckOutmber" name="number" value="<%=address[0].mobileNumber%>">
                             </span>
                             </div>
                          
@@ -130,10 +130,11 @@
                                 <li><a href="#">Subtotal <span id="subTotal">₹<%=total.cartTotal%></span></a></li>
                                 <li><a href="#">Discount  <span id="couponOffer"></span></a></li>
 
-                                <li><a href="#">Total <span id="total">₹<%=total.cartTotal%></span></a></li>
+                                <li><a href="#">Total ₹<span id="total"><%=total.cartTotal%></span></a></li>
                                 <input type="hidden" name="discountPercentage" id="discountPercentage" value="0">
                                 <input type="hidden" name="discountAmount" id="discountAmount" value="0">
                                 <input type="hidden" name="total" value="<%=total.cartTotal%>" id="totalVal" >
+                                <input type="hidden" name="wall1" value="0" id="wall1">
                                 <%if(address[0]){%>
                                 <input type="hidden" name="address" value="<%=address[0]._id%>" >
                                 <%}else{%>
@@ -142,20 +143,36 @@
                             </ul>
                          
                    
-                            <!-- <div class="coupon_area">
-                                    <input type="text" placeholder="Enter coupon code" name="couponCode" id="couponCode">
+                            <div class="coupon_area">
+                                    <input type="text" placeholder="Enter coupon code" name="couponCode" id="couponCode" style="width:300px ;">
                                     <a class="primary-btn" href="#" style="width: 100px; height: 40px; margin-top: 10px;" onclick="applyCoupon('<%=total.cartTotal%>')" >Apply</a>
-                            </div> -->
-                            <!-- <span id="couponErr"></span>
+                                    <a class="primary-btn" href="#" style="width: 100px; height: 40px; margin-top: -40px; margin-left: 190px;" onclick="clearCoupon()" >Clear</a>
+                            </div>
+                            <span id="couponErr"></span>
                             <div class="payment_item">
+                              <%if(user.wallet>total.cartTotal||user.wallet===0){%>
                                 <div class="radion_btn">
                                     <input type="radio" id="f-option4" name="paymentOption" value="wallet" >
-                                    <label for="f-option4">Wallet</label>
+                                    <label for="f-option4" >Wallet    ₹ <%= user.wallet %></label>
                                     <div class="check"></div>
                                 </div>
                                 <p>Pay  amount from your wallet</p>
-                            </div> -->
+                                <%}%>
+                                
+                                <%if(user.wallet<total.cartTotal&&user.wallet>0){ %>
 
+                                <div class="form-check"style="padding-top: 15px; padding-bottom: 15px">
+                                  <input class="form-check-input "type="checkbox" value="" id="flexCheckChecked" onclick="handleCheckboxClick" >
+                                  <label class="form-check-label" style="font-weight: 500; color: black; " for="flexCheckChecked">
+                                   USE WALLET ₹    <span  id="wall" value><%= user.wallet %></span>
+                                  </label>
+                                </div>
+                                <p>Pay  amount from your wallet</p>
+                            </div>
+                             <%}%>
+                           
+                            
+                              
                             <div class="payment_item">
                                 <div class="radion_btn">
                                     <input type="radio" id="f-option5" name="paymentOption" value="cod" checked>
@@ -164,20 +181,23 @@
                                 </div>
                                 <p>Pay the amount at your doorstep</p>
                             </div>
-                            <!-- <div class="payment_item">
+                            <div class="payment_item">
                                 <div class="radion_btn">
                                 <input type="radio" id="f-option6" name="paymentOption" value="razorpay" checked>
                                     <label for="f-option6">Razorpay</label>
                                     <div class="check"></div>
                                 </div>
                                 <p>Pay through Razorpay</p>
-                            </div> -->
-                          
+                            </div>
+                            
                             <%if(address[0]){%>
                             <button class="primary-btn" onclick="proceedToPayment()">Place Order</button>
                             <%}else{%>
                                 <button class="primary-btn " disabled onclick="proceedToPayment()">Place Order</button>
                                 <%}%>
+
+
+
 
                         </div>
                     </form>
@@ -185,7 +205,6 @@
                 </div>
             </div>
         </div>
-        
     </section>
     <!--================End Checkout Area =================-->
 
@@ -313,6 +332,9 @@
 
 
 <script>
+
+
+
   function validateForm() {
       const name = document.getElementById("name").value.trim();
       const mobileNumber = document.getElementById("mno").value.trim();
@@ -368,6 +390,10 @@
       return true;
   }
 </script>
+
+
+
+          
 
 
 
@@ -589,10 +615,10 @@ function applyCoupon(total) {
     console.log(order, 'order');
     console.log(order.amount, 'amount');
     var options = {
-      "key": "rzp_test_vnJVUHrwVTclxY", // Enter the Key ID generated from the Dashboard
+      "key": "rzp_test_yrE0GPWF0vL7Ax", // Enter the Key ID generated from the Dashboard
       "amount": order.amount, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
       "currency": "INR",
-      "name": "Smart Wrist",
+      "name": "Stride Spot",
       "description": "Test Transaction",
       "image": "../images/logo.png",
       "order_id": order.id, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
@@ -678,6 +704,62 @@ function applyCoupon(total) {
       }
     })
   }
+
+</script>
+
+
+<script>
+  function clearCoupon() {
+      console.log("clear");
+      document.getElementById("couponCode").value = "";
+      document.getElementById("total").innerText = "₹" + <%=total.cartTotal%>; // Corrected this line
+      document.getElementById('couponOffer').innerText =  '0%'
+      document.getElementById("discountAmount").innerText = "";
+      document.getElementById("discountPercentage").innerText = "";
+      document.getElementById('couponErr').innerText = ""
+
+  }
+  </script>
+  
+
+  <script>
+    // Get the checkbox element by its ID
+    
+    var checkbox = document.getElementById("flexCheckChecked");
+    
+
+    // Define a function to be called when the checkbox is clicked
+    function handleCheckboxClick() {
+        // Your code to be executed when the checkbox is clicked goes here
+      
+        if (checkbox.checked) {
+            console.log("Checkbox is selected");
+            const total=document.getElementById("total").innerText
+            const wall=document.getElementById("wall").innerText
+
+            newTotal = total - wall
+            document.getElementById("total").innerText = "₹" + newTotal;
+            document.getElementById('totalVal').value = newTotal
+            document.getElementById('wall1').value = "1"
+            console.log( newTotal);
+
+        
+            
+
+            // Perform actions when the checkbox is selected
+        } else {
+            console.log("Checkbox is not selected");
+            document.getElementById("total").innerText =  <%=total.cartTotal%>;
+            document.getElementById('totalVal').value = <%=total.cartTotal%>;
+            document.getElementById('wall1').value = "0"
+            // Perform actions when the checkbox is not selected
+        }
+    }
+
+  
+
+    // Attach an event listener to the checkbox element
+    checkbox.addEventListener("click", handleCheckboxClick);
 
 </script>
 

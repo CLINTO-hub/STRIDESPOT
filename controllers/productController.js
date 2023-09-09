@@ -106,11 +106,15 @@ const productPage = async ( req, res ) => {
   try{
       const id = req.query.id
       const product = await Product.findOne({ _id : id }).populate('category')
+      if(product.isProductListed == true && product.isListed == true){
       res.render('product',{product : product})
+      }else{
+        res.redirect('/error-404')
+      }
   }
   catch(error){
       console.log(error);
-      res.send({ success: false, error: error.message });
+      res.redirect('/error-404');
 }
 
 }

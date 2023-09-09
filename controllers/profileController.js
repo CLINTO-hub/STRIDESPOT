@@ -102,11 +102,32 @@ const checkOutAddress = async (req, res) => {
       console.log(error.message);
     }
   };
+
+  const walletTransaction = async(req,res)=>{
+    try {
+      const user = res.locals.user
+      // const userData= await User.findOne({_id:user._id})
+      const wallet = await User.aggregate([
+        {$match:{_id:user._id}},
+        {$unwind:"$walletTransaction"},
+        {$sort:{"walletTransaction.date":-1}},
+        {$project:{walletTransaction:1,wallet:1}}
+      ])
+  
+      res.render('walletTransaction',{wallet})
+      
+    } catch (error) {
+      console.log(error.message);
+    }
+  
+  
+  }
    
 
   module.exports={
     checkOutAddress,
     profileAdress,
     submitAddress,
-    profile
+    profile,
+    walletTransaction
   }

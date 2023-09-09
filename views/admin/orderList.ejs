@@ -68,6 +68,7 @@
                                     <th>#ID</th>
                                     <th scope="col">Name</th>
                                     <th scope="col">Total</th>
+                                    
                                     <th scope="col">Status</th>
                                     <th scope="col">Date</th>
                                     <th scope="col" class="text-end"> Action </th>
@@ -76,9 +77,10 @@
                             <tbody>
                                 <% orders.forEach(function(order,index) {%>
                                 <tr>
-                                    <td></td>
+                                    <td><%=order.orders._id%></td>
                                     <td><b><%=order.orders.name%></b></td>
                                     <td>₹<%=order.orders.totalPrice%></td>
+                                    
                                     <!-- <td><span class="badge rounded-pill alert-success" id="status-val-<%= order.orders._id %>"><%=order.orders.orderStatus%></span></td> -->
 
 
@@ -99,6 +101,7 @@
                                             <div class="badge rounded-pill alert-danger"><%= order.orders.orderStatus %></div>
                                         <% } %>
                                     </td>
+                        
 
 
 

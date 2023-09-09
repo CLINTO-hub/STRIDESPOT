@@ -21,7 +21,8 @@ const loadAddCategory = async(req,res)=>{
 
   const createCategory = async(req, res)=>{
     try {
-      const existingCategory = await Category.findOne({name:req.body.name})
+      const categoryName = req.body.name;
+      const existingCategory = await Category.findOne({name:categoryName.toUpperCase()})
       if(existingCategory){
         return res.render("addCategory",{message:"Category already exists"})
       } 
@@ -48,12 +49,16 @@ const loadUpdateCategory = async(req,res)=>{
 
 const updateCategory = async(req,res)=>{
   try {
+    const existingCategory = await Category.findOne({name:req.body.name})
+    if(existingCategory){
+      return res.render('updateCategory',{message:"Category already exists"})
+    }
     const categoryId = req.body.id
     await categoryHelper.UpdateCategory(categoryId,req.body)
     res.redirect('/admin/category')
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({error:'failed to update category'});
+    
   }
 }
 
@@ -77,6 +82,25 @@ const reListCategory = async(req, res)=>{
 const categoryPage = async (req,res) =>{
 
   try{
+
+
+    const sortQuery = req.query.sort || 'default'; // Get the sort query from request query parameters (default value is 'default')
+    const minPrice = parseFloat(req.query.minPrice); // Get the minimum price from request query parameters
+    const maxPrice = parseFloat(req.query.maxPrice)
+     
+    let sortOption = {};
+          if (sortQuery === 'price_asc' ||sortQuery === 'default' ) {
+            sortOption = { price: 1 }; 
+          } else if (sortQuery === 'price_desc') {
+            sortOption = { price: -1 }; 
+          }
+
+
+           
+      
+
+
+    console.log('sortOption',sortOption);
       const  categoryId = req.query.id
       const category = await Category.find({ })
       const page = parseInt(req.query.page) || 1; 
@@ -90,8 +114,9 @@ const categoryPage = async (req,res) =>{
       const product = await Product.find({ category:categoryId,$and: [{ isListed: true }, { isProductListed: true }]})
       .skip(skip)
       .limit(limit)
+      .sort(sortOption)
       .populate('category')
-      // console.log("products",products);
+      console.log("products",product);
       // console.log("categories",categories);
       res.render('categoryShop',{product,category, currentPage: page, totalPages })
   }

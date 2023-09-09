@@ -2,6 +2,7 @@ const User= require('../models/userModel')
 const userHelper= require('../helpers/userHelper')
 const otpHelper = require('../helpers/otpHelper')
 const Product = require('../models/productModel')
+const Banner=require('../models/bannerModel')
 const Category = require('../models/categoryModel')
 require('dotenv').config();// Module to Load environment variables from .env file
 
@@ -26,9 +27,11 @@ const securePassword = async(password)=>{
 }
 
 
-const loadHome = (req,res)=>{
+const loadHome = async(req,res)=>{
     try {
-        res.render('index')
+        const banner=await Banner.find({ isBannerListed: true })
+        
+        res.render('index',{banner})
     } catch (error) {
         console.log(error.message); 
     }
@@ -91,13 +94,14 @@ const insertUser = async(req,res)=>{
     if(req.body.password!=req.body.confPassword){
         return res.render("signup", { message: "Password and Confirm Password must be same" });
     }
-    const otp=otpHelper.generateOtp()
-    console.log(`Otp is ${otp}`);
+    // const otp=otpHelper.generateOtp()
+    // console.log(`Otp is ${otp}`);
+    await otpHelper.sendOtp(mobileNumber)
 
 
     try {
         req.session.userData=req.body
-        req.session.otp=otp;
+        req.session.mobile = mobileNumber 
         res.render('verifyOtp');
 
     } catch (error) {
@@ -110,34 +114,70 @@ const insertUser = async(req,res)=>{
  }
 
  const verifyOtp = async(req,res)=>{
+    const otp = req.body.otp
     try {
-        const userData = req.session.userData
-        if(req.session.otp!==req.body.otp){
-            res.render('verifyOtp',{message:"Invalid session"})
+    const userData = req.session.userData;
+    const verified = await otpHelper.verifyCode(userData.mno,otp)
 
-
-        }else{
-            const spassword=await securePassword(userData.password);
-            const user = new User({
+    if(verified){
+    const spassword =await securePassword(userData.password)
+        const user = new User({
             fname:userData.fname,
             lname:userData.lname,
             email:userData.email,
             mobile:userData.mno,
-            password:spassword
+            password:spassword,
+            is_admin:0
         })
-        const userDataSave= await user.save();
+        const userDataSave = await user.save()
         if(userDataSave){
             const token = createToken(user._id);
             res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge * 1000 });
             res.redirect('/')
         }else{
-        res.render('signup',{message:'Registration failed'})
+            res.render('register',{message:"Registration Failed"})
         }
-        }
-        } catch (error) {
+      }else{
+        res.render('verifyOtp',{ message: 'Wrong Otp' });
+
+      }
+
+
+    } catch (error) {
         console.log(error.message);
+     
     }
- }  
+}
+
+
+ const resendOTP = async (req, res) => {
+    const mobileNumber = req.session.mobile
+    try {
+      // Retrieve user data from session storage
+      const userData = req.session.userData;
+      
+  
+      if (!userData) {
+
+       
+
+        res.status(400).json({ message: 'Invalid or expired session' });
+      }
+      await otpHelper.sendOtp(mobileNumber)
+  
+      // Generate and send new OTP using Twilio
+
+
+    //   const otp=otpHelper.generateOtp()
+    // console.log(`Otp is ${otp}`);
+      
+  
+      res.render('verifyOtp',{ message: 'OTP resent successfully' });
+    } catch (error) {
+      console.error('Error: ', error);
+      res.render('verifyOtp',{ message: 'Failed to send otp' });
+    }
+  };
 
 
 const verifyLogin = async(req,res)=>{
@@ -222,22 +262,60 @@ const loadForgotPassword = async(req,res)=>{
     const displayProduct = async (req, res) => {
         try {
           const category = await Category.find({});
-          const page = parseInt(req.query.page) || 1; 
+          const page = parseInt(req.query.page) || 1;
           const limit = 6;
           const skip = (page - 1) * limit; // Calculate the number of products to skip
+          const searchQuery = req.query.search || ''; // Get the search query from request query parameters
+          const sortQuery = req.query.sort || 'default'; // Get the sort query from request query parameters (default value is 'default')
+          const minPrice = parseFloat(req.query.minPrice); // Get the minimum price from request query parameters
+          const maxPrice = parseFloat(req.query.maxPrice)
+    
       
-          // Fetch products with pagination
-          const totalProducts = await Product.countDocuments({ $and: [{ isListed: true }, { isProductListed: true }] }); // Get the total number of products
+          // Build the search filter
+          const searchFilter = {
+            $and: [
+              { isListed: true },
+              { isProductListed: true },
+              {
+                $or: [
+                  { name: { $regex: new RegExp(searchQuery, 'i') } },
+                ],
+              },
+            ],
+          };
+          if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+            searchFilter.$and.push({ price: { $gte: minPrice, $lte: maxPrice } });
+          }
+    
+          let sortOption = {};
+          if (sortQuery === 'price_asc' ||sortQuery === 'default' ) {
+            sortOption = { price: 1 }; 
+          } else if (sortQuery === 'price_desc') {
+            sortOption = { price: -1 }; 
+          }
+      
+          const totalProducts = await Product.countDocuments(searchFilter); // Get the total number of products matching the search query
           const totalPages = Math.ceil(totalProducts / limit); // Calculate the total number of pages
       
-          const products = await Product.find({ $and: [{ isListed: true }, { isProductListed: true }] })
+          const products = await Product.find(searchFilter)
             .skip(skip)
             .limit(limit)
+            .sort(sortOption)
             .populate('category');
+
+        if(searchQuery!=''){
+            res.render('categoryShop',{product: products,category, currentPage: page, totalPages })
+
+        }else{
+            res.render('Shop', { product: products, category, currentPage: page, totalPages });
+
+        }
       
-          res.render('shop', { product: products, category, currentPage: page, totalPages });
+         
         } catch (error) {
           console.log(error.message);
+          res.redirect('/error-500')
+    
         }
       };
 const profile = async(req,res)=>{
@@ -256,6 +334,16 @@ const logout = (req,res) =>{
 }
 
 
+const error404 = async(req,res)=>{
+  try {
+    res.render('errorPages/error-404')
+    
+  } catch (error) {
+    console.log(error.message);
+    
+  }
+}
+
 module.exports = {
     loadHome,
     signUp,
@@ -269,5 +357,7 @@ module.exports = {
     setNewPassword,
     displayProduct,
     profile,
-    logout
+    resendOTP,
+    logout,
+    error404
 };

@@ -15,7 +15,7 @@
 	<!-- meta character set -->
 	<meta charset="UTF-8">
 	<!-- Site Title -->
-	<title>Karma Shop</title>
+	<title>Stride Spot</title>
 
 	<!--
 		CSS
@@ -66,6 +66,7 @@
 							<li><a href="#"><span>Payment method</span> : <%=orders[0].paymentMethod%></a></li>
 							<li><a href="#"><span>Payment Status</span> : <%=orders[0].paymentStatus%></a></li>
 							<li><a href="#"><span>Transaction Id</span> : <%=orders[0].razorpayId%></a></li>
+							<li><a herf="#"><span>Order Status</span> : <%=orders[0].orderStatus%></li></a></li>
 
 						</ul>
 					</div>
@@ -160,7 +161,9 @@
 									<p>₹ <%=orders[0].totalPrice%></p>
 								</td>
 								<td>
+								<%	if(orders[0].orderStatus == 'Delivered'|| orders[0].orderStatus=='Placed'){ %>
 									<a href="/invoice?id=<%=orders[0]._id%>" class="btn btn-primary">Download Invoice</a>
+									 <% }  %>
 								</td>
 							</tr>
 						</tbody>

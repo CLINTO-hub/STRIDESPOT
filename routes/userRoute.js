@@ -7,6 +7,7 @@ const categoryController = require('../controllers/categoryController')
 const cartController = require('../controllers/cartController')
 const orderController = require('../controllers/orderController')
 const profileController = require('../controllers/profileController')
+const wishlistController = require('../controllers/wishlistController')
 userRoute.use(express.json())
 userRoute.use(express.urlencoded({extended:true}))
 const session = require('express-session');
@@ -20,6 +21,7 @@ userRoute.use(session({
     saveUninitialized: true,
   }));
 
+  
 userRoute.use(cookie())
 
 userRoute.set('view engine','ejs')
@@ -32,14 +34,18 @@ userRoute.all('*',validate.checkUser)
 userRoute.get('/',userController.loadHome)
 
 //Sign up
-userRoute.get('/signup',userController.signUp)
+userRoute.get('/register',userController.signUp)
 userRoute.post('/signup',userController.insertUser)
 userRoute.post('/verifyOtp',userController.verifyOtp)
+
 
 //Login
 userRoute.get('/login',userController.logIn)
 userRoute.post('/login',userController.verifyLogin)
 userRoute.get('/logout',userController.logout)
+
+//Resend OTP
+userRoute.get('/resendOtp',userController.resendOTP)
 
 //shop
 userRoute.get('/shop',userController.displayProduct)
@@ -55,6 +61,9 @@ userRoute.post('/setNewPassword',userController.setNewPassword)
 //profile
 userRoute.get('/profileDetails',validate.requireAuth,profileController.profile)
 userRoute.get('/profileAddress',validate.requireAuth,profileController.profileAdress)
+userRoute.get('/wallet',profileController.walletTransaction)
+userRoute.get('/walletStatus/:id',validate.requireAuth,orderController.walletStatus)
+
 
 //cart
 userRoute.get('/cart',validate.requireAuth,cartController.loadCart)
@@ -74,9 +83,31 @@ userRoute.get('/orderDetails',validate.requireAuth,orderController.orderDetails)
 userRoute.get('/profileorderList',validate.requireAuth,orderController.orderList)
 
 //cancelOrder
-userRoute.put('/cancelOrder',orderController.cancelOrder)   
+userRoute.post('/cancelOrder',orderController.cancelOrder)   
+
+//coupon
+userRoute.get('/applyCoupon/:id',orderController.applyCoupon)
+userRoute.get('/couponVerify/:id',orderController.verifyCoupon)
+
+
+
+userRoute.post('/verifyPayment',orderController.verifyPayment)  
+userRoute.post('/paymentFailed',orderController.paymentFailed)  
+
+userRoute.get('/invoice',validate.requireAuth,orderController.downloadInvoice)
+
+//wishList
+userRoute.post('/add-to-wishlist',wishlistController.addWishList)
+userRoute.get('/wishlist',validate.requireAuth,wishlistController.getWishList)
+userRoute.delete('/remove-product-wishlist',wishlistController.removeProductWishlist)
+
+
+//error
+userRoute.get('/error-404',userController.error404)
 
 
 
 
-module.exports = userRoute
+
+
+module.exports = userRoute    

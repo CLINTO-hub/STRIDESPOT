@@ -10,11 +10,23 @@ const storage = multer.diskStorage({
       cb(null, fileName);
     }
   });
+
+  const addBanner = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, path.join(__dirname, "../public/banner-images"));
+    },
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + "-" + file.originalname);
+    },
+  });
+
   
 
   module.exports = {
     upload: multer({ storage: storage }).array("file"),
-    update: multer({ storage: storage }).array("images")
+    update: multer({ storage: storage }).array("images"),
+
+    addBannerupload: multer({ storage: addBanner}). single("image")
 
   }
 

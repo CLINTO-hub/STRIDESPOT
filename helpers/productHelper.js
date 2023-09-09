@@ -72,6 +72,7 @@ const updateProduct = async (data, images) => {
             category: data.category,
             image: images,
             price: data.price,
+            stock: data.stock
           }
         }
       );

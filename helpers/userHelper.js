@@ -24,6 +24,7 @@ const verifyLogin = (data)=>{
                         const token = createToken(userData._id)
                         resolve({token})
                     }
+                    
                 }else{
                     resolve({ error: "Email and Password are Incorrect" });
                 }
@@ -45,3 +46,4 @@ const verifyLogin = (data)=>{
 module.exports={
     verifyLogin
 }
+

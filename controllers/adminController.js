@@ -2,6 +2,9 @@ const Admin = require('../models/adminModel')
 const User = require('../models/userModel')
 const orderHelper = require('../helpers/orderHelper')
 const adminHelper = require('../helpers/adminHelper')
+const Order = require('../models/orderModel')
+const Category = require('../models/categoryModel')
+const Product = require('../models/productModel')
 
 const jwt = require('jsonwebtoken');
 
@@ -12,9 +15,158 @@ const createToken = (id) => {
   });
 };
 
+const loadDashboard = async(req,res)=>{
+  try {
+    const orders = await Order.aggregate([
+      { $unwind: "$orders" },
+      {
+        $match: {
+          "orders.orderStatus": "Delivered"  // Consider only completed orders
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalPriceSum: { $sum: { $toInt: "$orders.totalPrice" } },
+          count: { $sum: 1 }
+        }
+      }
+
+    ])
+    console.log(orders);
+
+
+    const categorySales = await Order.aggregate([
+      { $unwind: "$orders" },
+      { $unwind: "$orders.productDetails" },
+      {
+        $match: {
+          "orders.orderStatus": "Delivered",
+        },
+      },
+      {
+        $project: {
+          CategoryId: "$orders.productDetails.category",
+          totalPrice: {
+            $multiply: [
+              { $toDouble: "$orders.productDetails.productPrice" },
+              { $toDouble: "$orders.productDetails.quantity" },
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$CategoryId",
+          PriceSum: { $sum: "$totalPrice" },
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "_id",
+          foreignField: "_id",
+          as: "categoryDetails",
+        },
+      },
+      {
+        $unwind: "$categoryDetails",
+      },
+      {
+        $project: {
+          categoryName: "$categoryDetails.name",
+          PriceSum: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+
+    const salesData = await Order.aggregate([ 
+      { $unwind: "$orders" }, 
+      {
+        $match: {
+          "orders.orderStatus": "Delivered"  // Consider only completed orders
+        }
+      },
+      {  
+        $group: {
+          _id: {
+            $dateToString: {  // Group by the date part of createdAt field
+              format: "%Y-%m-%d",
+              date: "$orders.createdAt"
+            }
+          },
+          dailySales: { $sum: { $toInt: "$orders.totalPrice" } }  // Calculate the daily sales
+        } 
+      }, 
+      {
+        $sort: {
+          _id: 1  // Sort the results by date in ascending order
+        }
+      }
+    ])
+
+    const salesCount = await Order.aggregate([
+      { $unwind: "$orders" },
+      {
+        $match: {
+          "orders.orderStatus": "Delivered"  
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {  // Group by the date part of createdAt field
+              format: "%Y-%m-%d",
+              date: "$orders.createdAt"
+            }
+          },
+          orderCount: { $sum: 1 }  // Calculate the count of orders per date
+        }
+      },
+      {
+        $sort: {
+          _id: 1  // Sort the results by date in ascending order
+        }
+      }
+    ])
+
+
+
+    const categoryCount  = await Category.find({}).count()
+
+    const productsCount  = await Product.find({}).count()
+
+    const onlinePay = await adminHelper.getOnlineCount()
+    console.log('onlinepay',onlinePay)
+    const walletPay = await adminHelper.getWalletCount()
+    const codPay = await adminHelper.getCodCount()
+    const RazorpayandWallet = await adminHelper.RazorpayandWalletCount() 
+
+
+    const latestorders = await Order.aggregate([
+      {$unwind:"$orders"},
+      {$sort:{
+        'orders.createdAt' :-1
+      }},
+      {$limit:10}
+    ]) 
+
+
+      res.render('dashboard',{orders,productsCount,categoryCount,
+        onlinePay,salesData,order:latestorders,salesCount,
+        walletPay,codPay,categorySales,RazorpayandWallet})
+  } catch (error) {
+      console.log(error)
+  }
+}
+
+
+
+
 const loadLogin = async(req,res)=>{
    try {
-
     res.render('login')
    } catch (error) {
     console.log(error.message);
@@ -32,7 +184,7 @@ const verifyLogin = async(req,res)=>{
       if(adminData){
         const token = createToken(adminData._id);
         res.cookie('jwtAdmin', token, { httpOnly: true, maxAge: maxAge * 1000 });
-        res.redirect('/admin/users')
+        res.redirect('/admin/dashboard')
     }else{
         res.render('login',{message:"Email and Password are Incorrect"});
     }
@@ -116,7 +268,9 @@ const orderDetails = async (req,res)=>{
     adminHelper.findOrder(id).then((orders) => {
       const address = orders[0].shippingAddress
       const products = orders[0].productDetails 
-      res.render('orderDetails',{orders,address,products}) 
+      const reason = orders[0].reason
+      
+      res.render('orderDetails',{orders,address,products,reason}) 
     });
       
   } catch (error) {
@@ -160,6 +314,55 @@ const changeStatus = async(req,res)=>{
 
 }
 
+
+const getSalesReport =  async (req, res) => {
+ 
+  const report = await adminHelper.getSalesReport();
+  let details = [];
+  const getDate = (date) => {
+    const orderDate = new Date(date);
+    const day = orderDate.getDate();
+    const month = orderDate.getMonth() + 1;
+    const year = orderDate.getFullYear();
+    return `${isNaN(day) ? "00" : day} - ${isNaN(month) ? "00" : month} - ${
+      isNaN(year) ? "0000" : year
+    }`;
+  };
+
+  report.forEach((orders) => {
+    details.push(orders.orders);
+  });
+ 
+  const totalSum = details.reduce((sum, detail) => sum + parseFloat(detail.totalPrice), 0);
+ 
+
+  res.render('salesReport',{details,getDate,totalSum})
+
+  
+}
+
+const postSalesReport =  (req, res) => {
+  let details = [];
+  const getDate = (date) => {
+    const orderDate = new Date(date);
+    const day = orderDate.getDate();
+    const month = orderDate.getMonth() + 1;
+    const year = orderDate.getFullYear();
+    return `${isNaN(day) ? "00" : day} - ${isNaN(month) ? "00" : month} - ${
+      isNaN(year) ? "0000" : year
+    }`;
+  };
+
+  adminHelper.postReport(req.body).then((orderData) => {
+    orderData.forEach((orders) => {
+      details.push(orders.orders);
+    });
+    const totalSum = details.reduce((sum, detail) => sum + parseFloat(detail.totalPrice), 0);
+    res.render("salesReport", {details,getDate,totalSum});
+  });
+}
+
+
 const logout = (req,res) =>{
   res.cookie('jwtAdmin', '' ,{maxAge : 1})
   res.redirect('/admin')
@@ -169,6 +372,7 @@ const logout = (req,res) =>{
 
 module.exports={
   loadLogin,
+  loadDashboard,
   verifyLogin,
   loadUsers,
   blockUser,
@@ -178,5 +382,7 @@ module.exports={
   cancelOrder,
   returnOrder,
   changeStatus,
+  getSalesReport,
+  postSalesReport,
   logout
 }

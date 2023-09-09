@@ -82,7 +82,7 @@
                                 <td class="" data-title="Stock">
                                     <div class="product_count">
                                       <input type="number" name="qty" id="qty-val-<%= cart.item %>" maxlength="12" title="Quantity:"
-                                            class="qty-val" value="<%= cart.quantity %>">
+                                            class="qty-val" value="<%= cart.quantity %>" readonly>
                                             <span id="qty-val-<%= cart.item %>" class="qty-val"></span>
 
                                       <button class="increase items-count" onclick="changeQuantity('<%= cart._id %>','<%=cart.item%>','<%=user._id%>','<%=index%>',1)"><i class="lnr lnr-chevron-up"></i></button>

@@ -30,10 +30,15 @@ const userSchema  = mongoose.Schema({
         type:Number,
         default:0
     },
+    walletTransaction:{
+        type:Array
+    },
     coupons:{
         type:Array,
     }
 })
+
+
 
 
 
