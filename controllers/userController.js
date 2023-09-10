@@ -53,7 +53,7 @@ const logIn = (req,res)=>{
         }
         else{
             
-        res.render('logIn')
+        res.render('login')
         }
     } catch (error) {
         console.log(error.message)
