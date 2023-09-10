@@ -307,7 +307,7 @@ const loadForgotPassword = async(req,res)=>{
             res.render('categoryShop',{product: products,category, currentPage: page, totalPages })
 
         }else{
-            res.render('Shop', { product: products, category, currentPage: page, totalPages });
+            res.render('shop', { product: products, category, currentPage: page, totalPages });
 
         }
       
