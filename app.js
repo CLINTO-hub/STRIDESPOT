@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-mongoose.connect('mongodb://127.0.0.1:27017/Stride_Spot')
+mongoose.connect('mongodb+srv://clintogeorge007:pv9ohQA6dnvkIczS@cluster0.zh3fhfm.mongodb.net/')
 
 const express = require('express');
 const app = express();
